@@ -29,6 +29,19 @@ from novaclient import exceptions
 
 
 _logger = logging.getLogger(__name__)
+_debug_mode = False
+_debug_handler = logging.StreamHandler()
+
+
+def set_debug_mode(mode):
+    global _debug_mode
+    if mode and not _debug_mode:
+        _logger.setLevel(logging.DEBUG)
+        _logger.addHandler(_debug_handler)
+    elif not mode and _debug_mode:
+        _logger.setLevel(logging.INFO)
+        _logger.removeHandler(_debug_handler)
+    _debug_mode = mode
 
 
 class HTTPClient(httplib2.Http):
@@ -55,12 +68,12 @@ class HTTPClient(httplib2.Http):
         self.force_exception_to_status_code = True
         self.disable_ssl_certificate_validation = insecure
 
-    def http_log(self, args, kwargs, resp, body):
         if 'NOVACLIENT_DEBUG' in os.environ and os.environ['NOVACLIENT_DEBUG']:
-            ch = logging.StreamHandler()
-            _logger.setLevel(logging.DEBUG)
-            _logger.addHandler(ch)
-        elif not _logger.isEnabledFor(logging.DEBUG):
+            set_debug_mode(True)
+
+
+    def http_log(self, args, kwargs, resp, body):
+        if not _logger.isEnabledFor(logging.DEBUG):
             return
 
         string_parts = ['curl -i']

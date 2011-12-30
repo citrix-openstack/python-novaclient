@@ -218,6 +218,7 @@ class OpenStackComputeShell(object):
         # Deal with global arguments
         if args.debug:
             httplib2.debuglevel = 1
+            novaclient.client.set_debug_mode(True)
 
         # Short-circuit and deal with help right away.
         if args.func == self.do_help:
