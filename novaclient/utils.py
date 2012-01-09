@@ -1,6 +1,6 @@
-import uuid
-
 import prettytable
+import sys
+import uuid
 
 from novaclient import exceptions
 
@@ -136,9 +136,13 @@ def find_resource(manager, name_or_id):
     try:
         return manager.find(name=name_or_id)
     except exceptions.NotFound:
-        msg = "No %s with a name or ID of '%s' exists." % \
-              (manager.resource_class.__name__.lower(), name_or_id)
-        raise exceptions.CommandError(msg)
+        try:
+            # Volumes does not have name, but displayName
+            return manager.find(displayName=name_or_id)
+        except exceptions.NotFound:
+            msg = "No %s with a name or ID of '%s' exists." % \
+                (manager.resource_class.__name__.lower(), name_or_id)
+            raise exceptions.CommandError(msg)
 
 
 def _format_servers_list_networks(server):
@@ -181,3 +185,10 @@ def safe_issubclass(*args):
         pass
 
     return False
+
+
+def import_class(import_str):
+    """Returns a class from a string including module and class."""
+    mod_str, _sep, class_str = import_str.rpartition('.')
+    __import__(mod_str)
+    return getattr(sys.modules[mod_str], class_str)

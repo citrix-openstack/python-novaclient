@@ -12,8 +12,6 @@ import logging
 import os
 import urlparse
 
-from novaclient import service_catalog
-
 try:
     import json
 except ImportError:
@@ -24,8 +22,9 @@ if not hasattr(urlparse, 'parse_qsl'):
     import cgi
     urlparse.parse_qsl = cgi.parse_qsl
 
-
 from novaclient import exceptions
+from novaclient import service_catalog
+from novaclient import utils
 
 
 _logger = logging.getLogger(__name__)
@@ -111,7 +110,7 @@ class HTTPClient(httplib2.Http):
         else:
             body = None
 
-        if resp.status in (400, 401, 403, 404, 408, 413, 500, 501):
+        if resp.status in (400, 401, 403, 404, 408, 409, 413, 500, 501):
             raise exceptions.from_response(resp, body)
 
         return resp, body
@@ -306,3 +305,21 @@ class HTTPClient(httplib2.Http):
             self.follow_all_redirects = tmp_follow_all_redirects
 
         return self._extract_service_catalog(url, resp, body)
+
+
+def get_client_class(version):
+    try:
+        version = str(version)
+        client_path = {
+            '1.1': 'novaclient.v1_1.client.Client',
+            '2': 'novaclient.v1_1.client.Client',
+        }[version]
+    except (KeyError, ValueError):
+        raise exceptions.UnsupportedVersion()
+
+    return utils.import_class(client_path)
+
+
+def Client(version, *args, **kwargs):
+    client_class = get_client_class(version)
+    return client_class(*args, **kwargs)
