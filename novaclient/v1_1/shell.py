@@ -1148,7 +1148,7 @@ def do_secgroup_delete_group_rule(cs, args):
         if (rule.get('ip_protocol') == params.get('ip_protocol') and
             rule.get('from_port') == params.get('from_port') and
             rule.get('to_port') == params.get('to_port') and
-            rule.get('group', {}).get('name') ==\
+            rule.get('group', {}).get('name') == \
                      params.get('group_name')):
             return cs.security_group_rules.delete(rule['id'])
 
@@ -1204,3 +1204,25 @@ def do_rate_limits(cs, args):
     limits = cs.limits.get().rate
     columns = ['Verb', 'URI', 'Value', 'Remain', 'Unit', 'Next_Available']
     utils.print_list(limits, columns)
+
+
+@utils.arg('name', metavar='<name>', help='Name of host aggregate.')
+def do_host_aggregate_add(cs, args):
+    """Create a new host aggregate"""
+    name = args.name
+    keypair = cs.host_aggregates.create(name)
+    print keypair
+
+
+@utils.arg('name', metavar='<name>', help='Host aggregate name to delete.')
+def do_host_aggregate_delete(cs, args):
+    """Delete keypair by its id"""
+    name = args.name
+    cs.host_aggregates.delete(name)
+
+
+def do_host_aggregate_list(cs, args):
+    """Print a list of host aggregates"""
+    keypairs = cs.host_aggregates.list()
+    columns = ['Name', 'ID']
+    utils.print_list(keypairs, columns)

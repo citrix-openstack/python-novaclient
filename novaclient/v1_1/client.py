@@ -2,6 +2,7 @@ from novaclient import client
 from novaclient.v1_1 import flavors
 from novaclient.v1_1 import floating_ip_dns
 from novaclient.v1_1 import floating_ips
+from novaclient.v1_1 import host_aggregates
 from novaclient.v1_1 import images
 from novaclient.v1_1 import keypairs
 from novaclient.v1_1 import limits
@@ -54,6 +55,7 @@ class Client(object):
         self.security_groups = security_groups.SecurityGroupManager(self)
         self.security_group_rules = \
             security_group_rules.SecurityGroupRuleManager(self)
+        self.host_aggregates = host_aggregates.HostAggregateManager(self)
 
         # Add in any extensions...
         if extensions:

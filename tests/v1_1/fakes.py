@@ -622,3 +622,22 @@ class FakeHTTPClient(base_client.HTTPClient):
         r = {'security_group_rule':
             self.get_os_security_group_rules()[1]['security_group_rules'][0]}
         return (202, r)
+
+    #
+    # Host Aggregates
+    #
+    def get_os_host_aggregates(self, *kw):
+        return (200, {"os-host-aggregates": [
+            {'name': 'test'}
+        ]})
+
+    def delete_os_host_aggregates_test(self, **kw):
+        return (202, None)
+
+    def post_os_host_aggregates(self, body, **kw):
+        assert body.keys() == ['os-host-aggregate']
+        fakes.assert_has_keys(body['os-host-aggregate'],
+                              required=['name'])
+        r = {'os-host-aggregate': self.get_os_host_aggregates()[1]
+             ['os-host-aggregates'][0]}
+        return (202, r)
