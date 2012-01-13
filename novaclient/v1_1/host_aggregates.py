@@ -45,16 +45,17 @@ class HostAggregate(base.Resource):
 class HostAggregateManager(base.ManagerWithFind):
     resource_class = HostAggregate
 
-    def create(self, name):
+    def create(self, name, availability_zone):
         """
         Create a HostAggregate
 
         :param name: name for the os-host-aggregates to create
         """
-        body = {'os-host-aggregate': {'name': name}}
+        body = {'host-aggregate': {'name': name,
+                                   'availability_zone': availability_zone}}
         #if public_key:
         #    body['keypair']['public_key'] = public_key
-        return self._create('/os-host-aggregates', body, 'os-host-aggregate')
+        return self._create('/os-host-aggregates', body, 'host-aggregate')
 
     def delete(self, key):
         """
@@ -68,4 +69,4 @@ class HostAggregateManager(base.ManagerWithFind):
         """
         Get a list of os-host-aggregates.
         """
-        return self._list('/os-host-aggregates', 'os-host-aggregates')
+        return self._list('/os-host-aggregates', 'host-aggregates')

@@ -1207,22 +1207,27 @@ def do_rate_limits(cs, args):
 
 
 @utils.arg('name', metavar='<name>', help='Name of host aggregate.')
-def do_host_aggregate_add(cs, args):
+@utils.arg('availability_zone', metavar='<name>',
+           help='The availablity zone of the host aggregate.')
+def do_host_aggregate_create(cs, args):
     """Create a new host aggregate"""
     name = args.name
-    keypair = cs.host_aggregates.create(name)
-    print keypair
+    availability_zone = args.availability_zone
+    aggregate = cs.host_aggregates.create(name, availability_zone)
+    _show_aggragate_list([aggregate])
 
-
-@utils.arg('name', metavar='<name>', help='Host aggregate name to delete.')
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
 def do_host_aggregate_delete(cs, args):
     """Delete keypair by its id"""
-    name = args.name
-    cs.host_aggregates.delete(name)
-
+    id = args.id
+    cs.host_aggregates.delete(id)
+    print "Aggregate %s has been succesfully deleted." % id
 
 def do_host_aggregate_list(cs, args):
     """Print a list of host aggregates"""
-    keypairs = cs.host_aggregates.list()
-    columns = ['Name', 'ID']
-    utils.print_list(keypairs, columns)
+    aggregates = cs.host_aggregates.list()
+    _show_aggragate_list(aggregates)
+
+def _show_aggragate_list(aggregates):
+    columns = ['Id', 'Name', 'Availability Zone']
+    utils.print_list(aggregates, columns)
