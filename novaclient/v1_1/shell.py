@@ -1216,18 +1216,67 @@ def do_host_aggregate_create(cs, args):
     aggregate = cs.host_aggregates.create(name, availability_zone)
     _show_aggragate_list([aggregate])
 
+
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
 def do_host_aggregate_delete(cs, args):
     """Delete keypair by its id"""
-    id = args.id
+    id = args.id  # TODO - find by name or id?
     cs.host_aggregates.delete(id)
     print "Aggregate %s has been succesfully deleted." % id
+
 
 def do_host_aggregate_list(cs, args):
     """Print a list of host aggregates"""
     aggregates = cs.host_aggregates.list()
     _show_aggragate_list(aggregates)
 
+
 def _show_aggragate_list(aggregates):
     columns = ['Id', 'Name', 'Availability Zone']
     utils.print_list(aggregates, columns)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to udpate.')
+@utils.arg('metadata',
+           metavar='<key=value>',
+           nargs='+',
+           action='append',
+           default=[],
+           help='Metadata to add/update to host aggregate')
+def do_host_aggregate_update(cs, args):
+    id = args.id
+    metadata = _extract_metadata(args)
+    aggregate = cs.host_aggregates.update(id, metadata)
+    print "Aggregate %s has been succesfully updated." % id
+    _show_aggragate_list([aggregate])
+
+
+def _extract_metadata(args):
+    metadata = {}
+    for metadatum in args.metadata[0]:
+        if metadatum.find('=') > -1:
+            (key, value) = metadatum.split('=', 1)
+            metadata[key] = value
+    return metadata
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+@utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
+def do_host_aggregate_add_host(cs, args):
+    """Delete keypair by its id"""
+    id = args.id  # TODO - find by name or id?
+    host = args.host
+    host_info = cs.host_aggregates.add_host(id, host)
+    print "Aggregate %s has been succesfully updated." % id
+    utils.print_dict(host_info)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+@utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
+def do_host_aggregate_remove_host(cs, args):
+    """Delete keypair by its id"""
+    id = args.id
+    host = args.host
+    host_info = cs.host_aggregates.remove_host(id, host)
+    print "Aggregate %s has been succesfully updated." % id
+    utils.print_dict(host_info)

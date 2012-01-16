@@ -45,6 +45,12 @@ class HostAggregate(base.Resource):
 class HostAggregateManager(base.ManagerWithFind):
     resource_class = HostAggregate
 
+    def list(self):
+        """
+        Get a list of os-host-aggregates.
+        """
+        return self._list('/os-host-aggregates', 'host-aggregates')
+
     def create(self, name, availability_zone):
         """
         Create a HostAggregate
@@ -57,16 +63,39 @@ class HostAggregateManager(base.ManagerWithFind):
         #    body['keypair']['public_key'] = public_key
         return self._create('/os-host-aggregates', body, 'host-aggregate')
 
-    def delete(self, key):
+    def delete(self, arggregate_id):
         """
         Delete a os-host-aggregates
 
         :param key: The :class:`os-host-aggregates` (or its ID) to delete.
         """
-        self._delete('/os-host-aggregates/%s' % (base.getid(key)))
+        self._delete('/os-host-aggregates/%s' % (base.getid(arggregate_id)))
 
-    def list(self):
+    def update(self, arggregate_id, metadata):
         """
-        Get a list of os-host-aggregates.
+        Update the HostAggregate Metadata
         """
-        return self._list('/os-host-aggregates', 'host-aggregates')
+        body = {'updates': metadata}
+        return self._create("/os-host-aggregates/%s/update"
+                                % base.getid(arggregate_id),
+                            body, "host-aggregate")
+
+    def add_host(self, arggregate_id, host):
+        """
+        Add a host into the Host Aggregate
+        """
+        body = {'host': host}
+        return self._create("/os-host-aggregates/%s/add_host"
+                                % base.getid(arggregate_id), body,
+                                "hosts-in-aggregate",
+                                return_raw=True)
+
+    def remove_host(self, arggregate_id, host):
+        """
+        Remove a host from the Host Aggregate
+        """
+        body = {'host': host}
+        return self._create("/os-host-aggregates/%s/remove_host"
+                                % base.getid(arggregate_id), body,
+                                "hosts-in-aggregate",
+                                return_raw=True)
