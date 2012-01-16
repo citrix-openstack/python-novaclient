@@ -122,13 +122,16 @@ class Manager(utils.HookableMixin):
         if hasattr(self, '_uuid_cache'):
             self._uuid_cache.write("%s\n" % uuid)
 
-    def _get(self, url, response_key):
+    def _get(self, url, response_key, return_raw=False,):
         resp, body = self.api.client.get(url)
+        if return_raw:
+            return body[response_key]
         return self.resource_class(self, body[response_key])
 
     def _create(self, url, body, response_key, return_raw=False, **kwargs):
         self.run_hooks('modify_body_for_create', body, **kwargs)
         resp, body = self.api.client.post(url, body=body)
+
         if return_raw:
             return body[response_key]
 

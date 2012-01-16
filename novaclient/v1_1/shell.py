@@ -1206,34 +1206,30 @@ def do_rate_limits(cs, args):
     utils.print_list(limits, columns)
 
 
+def do_aggregate_list(cs, args):
+    """Print a list of all aggregates"""
+    aggregates = cs.host_aggregates.list()
+    columns = ['Id', 'Name', 'Availability Zone']
+    utils.print_list(aggregates, columns)
+
+
 @utils.arg('name', metavar='<name>', help='Name of host aggregate.')
-@utils.arg('availability_zone', metavar='<name>',
+@utils.arg('availability_zone', metavar='<availability_zone>',
            help='The availablity zone of the host aggregate.')
-def do_host_aggregate_create(cs, args):
-    """Create a new host aggregate"""
+def do_aggregate_create(cs, args):
+    """Create a new host aggregate with the specified details"""
     name = args.name
     availability_zone = args.availability_zone
     aggregate = cs.host_aggregates.create(name, availability_zone)
-    _show_aggragate_list([aggregate])
+    utils.print_dict(aggregate)
 
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
 def do_host_aggregate_delete(cs, args):
-    """Delete keypair by its id"""
+    """Delete the aggregate by its id"""
     id = args.id  # TODO - find by name or id?
     cs.host_aggregates.delete(id)
     print "Aggregate %s has been succesfully deleted." % id
-
-
-def do_host_aggregate_list(cs, args):
-    """Print a list of host aggregates"""
-    aggregates = cs.host_aggregates.list()
-    _show_aggragate_list(aggregates)
-
-
-def _show_aggragate_list(aggregates):
-    columns = ['Id', 'Name', 'Availability Zone']
-    utils.print_list(aggregates, columns)
 
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to udpate.')
@@ -1243,12 +1239,13 @@ def _show_aggragate_list(aggregates):
            action='append',
            default=[],
            help='Metadata to add/update to host aggregate')
-def do_host_aggregate_update(cs, args):
+def do_aggregate_update(cs, args):
+    """Update the metadata of the specified aggregate"""
     id = args.id
     metadata = _extract_metadata(args)
     aggregate = cs.host_aggregates.update(id, metadata)
     print "Aggregate %s has been succesfully updated." % id
-    _show_aggragate_list([aggregate])
+    utils.print_dict(aggregate)
 
 
 def _extract_metadata(args):
@@ -1262,21 +1259,29 @@ def _extract_metadata(args):
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
 @utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
-def do_host_aggregate_add_host(cs, args):
-    """Delete keypair by its id"""
+def do_aggregate_add_host(cs, args):
+    """Add the host to the specified aggregate"""
     id = args.id  # TODO - find by name or id?
     host = args.host
-    host_info = cs.host_aggregates.add_host(id, host)
+    aggregate = cs.host_aggregates.add_host(id, host)
     print "Aggregate %s has been succesfully updated." % id
-    utils.print_dict(host_info)
+    utils.print_dict(aggregate)
 
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
 @utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
-def do_host_aggregate_remove_host(cs, args):
-    """Delete keypair by its id"""
+def do_aggregate_remove_host(cs, args):
+    """Remove the specified host from the specfied aggregate"""
     id = args.id
     host = args.host
-    host_info = cs.host_aggregates.remove_host(id, host)
+    aggregate = cs.host_aggregates.remove_host(id, host)
     print "Aggregate %s has been succesfully updated." % id
-    utils.print_dict(host_info)
+    utils.print_dict(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+def do_aggregate_details(cs, args):
+    """Show details of the specified aggregate"""
+    id = args.id
+    aggregate_details = cs.host_aggregates.get_details(id)
+    utils.print_dict(aggregate_details)

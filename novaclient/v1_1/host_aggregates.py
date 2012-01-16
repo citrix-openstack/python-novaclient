@@ -63,13 +63,15 @@ class HostAggregateManager(base.ManagerWithFind):
         #    body['keypair']['public_key'] = public_key
         return self._create('/os-host-aggregates', body, 'host-aggregate')
 
-    def delete(self, arggregate_id):
+    def get_details(self, arggregate_id):
         """
-        Delete a os-host-aggregates
+        Get details of the specified host-aggregate
 
-        :param key: The :class:`os-host-aggregates` (or its ID) to delete.
+        :param key: The id of host-aggregates to get the details for 
         """
-        self._delete('/os-host-aggregates/%s' % (base.getid(arggregate_id)))
+        return self._get('/os-host-aggregates/%s'
+                            % (base.getid(arggregate_id)),
+                         "host-aggregate", return_raw=True)
 
     def update(self, arggregate_id, metadata):
         """
@@ -78,7 +80,7 @@ class HostAggregateManager(base.ManagerWithFind):
         body = {'updates': metadata}
         return self._create("/os-host-aggregates/%s/update"
                                 % base.getid(arggregate_id),
-                            body, "host-aggregate")
+                            body, "host-aggregate", return_raw=True)
 
     def add_host(self, arggregate_id, host):
         """
@@ -86,9 +88,8 @@ class HostAggregateManager(base.ManagerWithFind):
         """
         body = {'host': host}
         return self._create("/os-host-aggregates/%s/add_host"
-                                % base.getid(arggregate_id), body,
-                                "hosts-in-aggregate",
-                                return_raw=True)
+                                % base.getid(arggregate_id),
+                            body, "host-aggregate", return_raw=True)
 
     def remove_host(self, arggregate_id, host):
         """
@@ -96,6 +97,13 @@ class HostAggregateManager(base.ManagerWithFind):
         """
         body = {'host': host}
         return self._create("/os-host-aggregates/%s/remove_host"
-                                % base.getid(arggregate_id), body,
-                                "hosts-in-aggregate",
-                                return_raw=True)
+                                % base.getid(arggregate_id),
+                            body, "host-aggregate", return_raw=True)
+
+    def delete(self, arggregate_id):
+        """
+        Delete a os-host-aggregates
+
+        :param key: The :class:`os-host-aggregates` (or its ID) to delete.
+        """
+        self._delete('/os-host-aggregates/%s' % (base.getid(arggregate_id)))
