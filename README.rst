@@ -77,6 +77,14 @@ You'll find complete documentation on the shell by running
       <subcommand>
         add-fixed-ip        Add a new fixed IP address to a servers network.
         add-floating-ip     Add a floating IP address to a server.
+        aggregate-add-host  Add the host to the specified aggregate
+        aggregate-create    Create a new host aggregate with the specified details
+        aggregate-delete    Delete the aggregate by its id
+        aggregate-details   Show details of the specified aggregate
+        aggregate-list      Print a list of all aggregates
+        aggregate-remove-host
+                            Remove the specified host from the specfied aggregate
+        aggregate-update    Update the metadata of the specified aggregate
         backup              Backup a server.
         backup-schedule     Show or edit the backup schedule for a server.
         backup-schedule-delete

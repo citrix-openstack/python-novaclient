@@ -1225,7 +1225,7 @@ def do_aggregate_create(cs, args):
 
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
-def do_host_aggregate_delete(cs, args):
+def do_aggregate_delete(cs, args):
     """Delete the aggregate by its id"""
     id = args.id  # TODO - find by name or id?
     cs.host_aggregates.delete(id)
