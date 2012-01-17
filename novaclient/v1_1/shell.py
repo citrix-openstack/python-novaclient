@@ -337,6 +337,15 @@ def do_image_list(cs, args):
 def do_image_meta(cs, args):
     """Set or Delete metadata on an image."""
     image = _find_image(cs, args.image)
+    metadata = _extract_metadata(args)
+
+    if args.action == 'set':
+        cs.images.set_meta(image, metadata)
+    elif args.action == 'delete':
+        cs.images.delete_meta(image, metadata.keys())
+
+
+def _extract_metadata(args):
     metadata = {}
     for metadatum in args.metadata[0]:
         # Can only pass the key in on 'delete'
@@ -348,11 +357,7 @@ def do_image_meta(cs, args):
             value = None
 
         metadata[key] = value
-
-    if args.action == 'set':
-        cs.images.set_meta(image, metadata)
-    elif args.action == 'delete':
-        cs.images.delete_meta(image, metadata.keys())
+    return metadata
 
 
 def _print_image(image):
@@ -634,17 +639,7 @@ def do_image_create(cs, args):
 def do_meta(cs, args):
     """Set or Delete metadata on a server."""
     server = _find_server(cs, args.server)
-    metadata = {}
-    for metadatum in args.metadata[0]:
-        # Can only pass the key in on 'delete'
-        # So this doesn't have to have '='
-        if metadatum.find('=') > -1:
-            (key, value) = metadatum.split('=', 1)
-        else:
-            key = metadatum
-            value = None
-
-        metadata[key] = value
+    metadata = _extract_metadata(args)
 
     if args.action == 'set':
         cs.servers.set_meta(server, metadata)
@@ -1246,15 +1241,6 @@ def do_aggregate_update(cs, args):
     aggregate = cs.host_aggregates.update(id, metadata)
     print "Aggregate %s has been succesfully updated." % id
     utils.print_dict(aggregate)
-
-
-def _extract_metadata(args):
-    metadata = {}
-    for metadatum in args.metadata[0]:
-        if metadatum.find('=') > -1:
-            (key, value) = metadatum.split('=', 1)
-            metadata[key] = value
-    return metadata
 
 
 @utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')

@@ -22,7 +22,7 @@ from novaclient import base
 
 class HostAggregate(base.Resource):
     """
-    A os-host-aggregates is a collection of compute services.
+    An aggregates is a collection of compute services.
     """
 
     def __repr__(self):
@@ -61,7 +61,8 @@ class HostAggregateManager(base.ManagerWithFind):
                                    'availability_zone': availability_zone}}
         #if public_key:
         #    body['keypair']['public_key'] = public_key
-        return self._create('/os-host-aggregates', body, 'host-aggregate')
+        return self._create('/os-host-aggregates', body, 'host-aggregate',
+                            return_raw=True)
 
     def get_details(self, arggregate_id):
         """
