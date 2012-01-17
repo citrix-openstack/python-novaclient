@@ -503,12 +503,13 @@ def do_rebuild(cs, args):
     server = _find_server(cs, args.server)
     image = _find_image(cs, args.image)
 
-    if args.rebuild_password != False:
+    if args.rebuild_password is not False:
         _password = args.rebuild_password
     else:
         _password = None
 
-    s = server.rebuild(image, _password)
+    kwargs = utils.get_resource_manager_extra_kwargs(do_rebuild, args)
+    s = server.rebuild(image, _password, **kwargs)
     _print_server(cs, s)
 
 
@@ -526,7 +527,8 @@ def do_resize(cs, args):
     """Resize a server."""
     server = _find_server(cs, args.server)
     flavor = _find_flavor(cs, args.flavor)
-    server.resize(flavor)
+    kwargs = utils.get_resource_manager_extra_kwargs(do_resize, args)
+    server.resize(flavor, **kwargs)
 
 
 @utils.arg('server', metavar='<server>', help='Name or ID of server.')
@@ -963,7 +965,7 @@ def do_volume_snapshot_delete(cs, args):
 
 
 def _print_floating_ip_list(floating_ips):
-    utils.print_list(floating_ips, ['Ip', 'Instance Id', 'Fixed Ip'])
+    utils.print_list(floating_ips, ['Ip', 'Instance Id', 'Fixed Ip', 'Pool'])
 
 
 @utils.arg('server', metavar='<server>', help='Name or ID of server.')
@@ -982,9 +984,14 @@ def do_remove_floating_ip(cs, args):
     server.remove_floating_ip(args.address)
 
 
+@utils.arg('pool',
+           metavar='<floating_ip_pool>',
+           help='Name of Floating IP Pool. (Optional)',
+           nargs='?',
+           default=None)
 def do_floating_ip_create(cs, args):
     """Allocate a floating IP for the current tenant."""
-    _print_floating_ip_list([cs.floating_ips.create()])
+    _print_floating_ip_list([cs.floating_ips.create(pool=args.pool)])
 
 
 @utils.arg('address', metavar='<address>', help='IP of Floating Ip.')
@@ -1002,6 +1009,53 @@ def do_floating_ip_list(cs, args):
     _print_floating_ip_list(cs.floating_ips.list())
 
 
+def do_floating_ip_pool_list(cs, args):
+    """List all floating ip pools."""
+    utils.print_list(cs.floating_ip_pools.list(), ['name'])
+
+
+def _print_dns_list(dns_entries):
+    utils.print_list(dns_entries, ['ip', 'zone', 'name'])
+
+
+def do_dns_zones(cs, args):
+    """Print a list of available dns zones."""
+    zones = cs.floating_ip_dns.zones()
+    utils.print_list(zones, ['zone'])
+
+
+@utils.arg('zone', metavar='<zone>', help='DNS zone')
+@utils.arg('--ip', metavar='<ip>', help='ip address', default=None)
+@utils.arg('--name', metavar='<name>', help='DNS name', default=None)
+def do_dns_list(cs, args):
+    """List current DNS entries for zone and ip or zone and name."""
+    if not (args.ip or args.name):
+        raise exceptions.CommandError(
+              "You must specify either --ip or --name")
+    entries = cs.floating_ip_dns.get_entries(args.zone,
+                                             ip=args.ip, name=args.name)
+    _print_dns_list(entries)
+
+
+@utils.arg('zone', metavar='<zone>', help='DNS zone')
+@utils.arg('name', metavar='<name>', help='DNS name')
+@utils.arg('ip', metavar='<ip>', help='ip address')
+@utils.arg('--type', metavar='<type>', help='dns type (e.g. "A")',
+           default='A')
+def do_dns_create(cs, args):
+    """Create a DNS entry for zone, name and ip."""
+    entries = cs.floating_ip_dns.create_entry(args.zone, args.name,
+                                              args.ip, args.type)
+    _print_dns_list([entries])
+
+
+@utils.arg('zone', metavar='<zone>', help='DNS zone')
+@utils.arg('name', metavar='<name>', help='DNS name')
+def do_dns_delete(cs, args):
+    """Delete the specified DNS entry."""
+    cs.floating_ip_dns.delete_entry(args.zone, args.name)
+
+
 def _print_secgroup_rules(rules):
     class FormattedRule:
         def __init__(self, obj):
@@ -1012,7 +1066,7 @@ def _print_secgroup_rules(rules):
                 elif k == 'group':
                     k = 'source_group'
                     v = v.get('name')
-                if v == None:
+                if v is None:
                     v = ''
 
                 setattr(self, k, v)
