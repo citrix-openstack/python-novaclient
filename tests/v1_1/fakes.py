@@ -348,6 +348,12 @@ class FakeHTTPClient(base_client.HTTPClient):
     def get_flavors_2(self, **kw):
         return (200, {'flavor': self.get_flavors_detail()[1]['flavors'][1]})
 
+    def delete_flavors_flavordelete(self, **kw):
+        return (202, None)
+
+    def post_flavors(self, body, **kw):
+        return (202, {'flavor': self.get_flavors_detail()[1]['flavors'][0]})
+
     #
     # Floating ips
     #
@@ -383,44 +389,55 @@ class FakeHTTPClient(base_client.HTTPClient):
         return (204, None)
 
     def get_os_floating_ip_dns(self, **kw):
-        return (205, {'zones':
-                      [{'zone': 'example.org'},
-                       {'zone': 'example.com'}]})
+        return (205, {'domain_entries':
+                      [{'domain': 'example.org'},
+                       {'domain': 'example.com'}]})
 
-    def get_os_floating_ip_dns_zone1(self, **kw):
+    def get_os_floating_ip_dns_testdomain_entries(self, **kw):
         if kw.get('ip'):
             return (205, {'dns_entries':
                           [{'dns_entry':
                              {'ip': kw.get('ip'),
                               'name': "host1",
                               'type': "A",
-                              'zone': 'zone1'}},
+                              'domain': 'testdomain'}},
                            {'dns_entry':
                              {'ip': kw.get('ip'),
                               'name': "host2",
                               'type': "A",
-                              'zone': 'zone1'}}]})
-        if kw.get('name'):
-            return (205, {'dns_entries':
-                          [{'dns_entry':
-                            {'ip': "10.10.10.10",
-                             'name': kw.get('name'),
-                             'type': "A",
-                             'zone': 'zone1'}}]})
+                              'domain': 'testdomain'}}]})
         else:
             return (404, None)
 
-    def post_os_floating_ip_dns(self, body, **kw):
-        fakes.assert_has_keys(body['dns_entry'],
-                        required=['name', 'ip', 'dns_type', 'zone'])
+    def get_os_floating_ip_dns_testdomain_entries_testname(self, **kw):
         return (205, {'dns_entry':
-                      {'ip': body['dns_entry'].get('ip'),
-                       'name': body['dns_entry'].get('name'),
-                       'type': body['dns_entry'].get('dns_type'),
-                       'zone': body['dns_entry'].get('zone')}})
+                        {'ip': "10.10.10.10",
+                         'name': 'testname',
+                         'type': "A",
+                         'domain': 'testdomain'}})
 
-    def delete_os_floating_ip_dns_zone1(self, **kw):
-        assert 'name' in kw
+    def put_os_floating_ip_dns_testdomain(self, body, **kw):
+        if body['domain_entry']['scope'] == 'private':
+            fakes.assert_has_keys(body['domain_entry'],
+                            required=['availability_zone', 'scope'])
+        elif body['domain_entry']['scope'] == 'public':
+            fakes.assert_has_keys(body['domain_entry'],
+                            required=['project', 'scope'])
+
+        else:
+            fakes.assert_has_keys(body['domain_entry'],
+                            required=['project', 'scope'])
+        return (205, None)
+
+    def put_os_floating_ip_dns_testdomain_entries_testname(self, body, **kw):
+        fakes.assert_has_keys(body['dns_entry'],
+                        required=['ip', 'dns_type'])
+        return (205, None)
+
+    def delete_os_floating_ip_dns_testdomain(self, **kw):
+        return (200, None)
+
+    def delete_os_floating_ip_dns_testdomain_entries_testname(self, **kw):
         return (200, None)
 
     #
@@ -544,6 +561,14 @@ class FakeHTTPClient(base_client.HTTPClient):
         return (202, r)
 
     #
+    # Virtual Interfaces
+    #
+    def get_servers_1234_os_virtual_interfaces(self, **kw):
+        return (200, {"virtual_interfaces": [
+            {'id': 'fakeid', 'mac_address': 'fakemac'}
+        ]})
+
+    #
     # Quotas
     #
 
@@ -635,3 +660,51 @@ class FakeHTTPClient(base_client.HTTPClient):
         r = {'security_group_rule':
             self.get_os_security_group_rules()[1]['security_group_rules'][0]}
         return (202, r)
+
+    #
+    # Tenant Usage
+    #
+    def get_os_simple_tenant_usage(self, **kw):
+        return (200, {u'tenant_usages': [{
+            u'total_memory_mb_usage': 25451.762807466665,
+            u'total_vcpus_usage': 49.71047423333333,
+            u'total_hours': 49.71047423333333,
+            u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+            u'stop': u'2012-01-22 19:48:41.750722',
+            u'server_usages': [{
+                u'hours': 49.71047423333333,
+                u'uptime': 27035, u'local_gb': 0, u'ended_at': None,
+                u'name': u'f15image1',
+                u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+                u'vcpus': 1, u'memory_mb': 512, u'state': u'active',
+                u'flavor': u'm1.tiny',
+                u'started_at': u'2012-01-20 18:06:06.479998'}],
+            u'start': u'2011-12-25 19:48:41.750687',
+            u'total_local_gb_usage': 0.0}]})
+
+    def get_os_simple_tenant_usage_tenantfoo(self, **kw):
+        return (200, {u'tenant_usage': {
+            u'total_memory_mb_usage': 25451.762807466665,
+            u'total_vcpus_usage': 49.71047423333333,
+            u'total_hours': 49.71047423333333,
+            u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+            u'stop': u'2012-01-22 19:48:41.750722',
+            u'server_usages': [{
+                u'hours': 49.71047423333333,
+                u'uptime': 27035, u'local_gb': 0, u'ended_at': None,
+                u'name': u'f15image1',
+                u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+                u'vcpus': 1, u'memory_mb': 512, u'state': u'active',
+                u'flavor': u'm1.tiny',
+                u'started_at': u'2012-01-20 18:06:06.479998'}],
+            u'start': u'2011-12-25 19:48:41.750687',
+            u'total_local_gb_usage': 0.0}})
+
+    #
+    # Certificates
+    #
+    def get_os_certificates_root(self, **kw):
+        return (200, {'certificate': {'private_key': None, 'data': 'foo'}})
+
+    def post_os_certificates(self, **kw):
+        return (200, {'certificate': {'private_key': 'foo', 'data': 'bar'}})

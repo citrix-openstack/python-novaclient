@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import getpass
 import os
 
@@ -293,9 +294,7 @@ def _translate_flavor_keys(collection):
                 setattr(item, to_key, item._info[from_key])
 
 
-def do_flavor_list(cs, args):
-    """Print a list of available 'flavors' (sizes of servers)."""
-    flavors = cs.flavors.list()
+def _print_flavor_list(flavors):
     _translate_flavor_keys(flavors)
     utils.print_list(flavors, [
         'ID',
@@ -305,6 +304,50 @@ def do_flavor_list(cs, args):
         'Local_GB',
         'VCPUs',
         'RXTX_Factor'])
+
+
+def do_flavor_list(cs, args):
+    """Print a list of available 'flavors' (sizes of servers)."""
+    flavors = cs.flavors.list()
+    _print_flavor_list(flavors)
+
+
+@utils.arg('id',
+     metavar='<id>',
+     help="Unique ID of the flavor to delete")
+def do_flavor_delete(cs, args):
+    """Delete a specific flavor"""
+    cs.flavors.delete(args.id)
+
+
+@utils.arg('name',
+     metavar='<name>',
+     help="Name of the new flavor")
+@utils.arg('id',
+     metavar='<id>',
+     help="Unique integer ID for the new flavor")
+@utils.arg('ram',
+     metavar='<ram>',
+     help="Memory size in MB")
+@utils.arg('disk',
+     metavar='<disk>',
+     help="Disk size in GB")
+@utils.arg('vcpus',
+     metavar='<vcpus>',
+     help="Number of vcpus")
+@utils.arg('--swap',
+     metavar='<swap>',
+     help="Swap space size in MB (default 0)",
+     default=0)
+@utils.arg('--rxtx-factor',
+     metavar='<factor>',
+     help="RX/TX factor (default 1)",
+     default=1)
+def do_flavor_create(cs, args):
+    """Create a new flavor"""
+    f = cs.flavors.create(args.name, args.ram, args.vcpus, args.disk, args.id,
+                          args.swap, args.rxtx_factor)
+    _print_flavor_list([f])
 
 
 def do_image_list(cs, args):
@@ -1032,45 +1075,81 @@ def do_floating_ip_pool_list(cs, args):
 
 
 def _print_dns_list(dns_entries):
-    utils.print_list(dns_entries, ['ip', 'zone', 'name'])
+    utils.print_list(dns_entries, ['ip', 'name', 'domain'])
 
 
-def do_dns_zones(cs, args):
-    """Print a list of available dns zones."""
-    zones = cs.floating_ip_dns.zones()
-    utils.print_list(zones, ['zone'])
+def _print_domain_list(domain_entries):
+    utils.print_list(domain_entries, ['domain', 'scope',
+                                   'project', 'availability_zone'])
 
 
-@utils.arg('zone', metavar='<zone>', help='DNS zone')
+def do_dns_domains(cs, args):
+    """Print a list of available dns domains."""
+    domains = cs.dns_domains.domains()
+    _print_domain_list(domains)
+
+
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
 @utils.arg('--ip', metavar='<ip>', help='ip address', default=None)
 @utils.arg('--name', metavar='<name>', help='DNS name', default=None)
 def do_dns_list(cs, args):
-    """List current DNS entries for zone and ip or zone and name."""
+    """List current DNS entries for domain and ip or domain and name."""
     if not (args.ip or args.name):
         raise exceptions.CommandError(
               "You must specify either --ip or --name")
-    entries = cs.floating_ip_dns.get_entries(args.zone,
-                                             ip=args.ip, name=args.name)
-    _print_dns_list(entries)
+    if args.name:
+        entry = cs.dns_entries.get(args.domain, args.name)
+        _print_dns_list([entry])
+    else:
+        entries = cs.dns_entries.get_for_ip(args.domain,
+                                            ip=args.ip)
+        _print_dns_list(entries)
 
 
-@utils.arg('zone', metavar='<zone>', help='DNS zone')
-@utils.arg('name', metavar='<name>', help='DNS name')
 @utils.arg('ip', metavar='<ip>', help='ip address')
+@utils.arg('name', metavar='<name>', help='DNS name')
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
 @utils.arg('--type', metavar='<type>', help='dns type (e.g. "A")',
            default='A')
 def do_dns_create(cs, args):
-    """Create a DNS entry for zone, name and ip."""
-    entries = cs.floating_ip_dns.create_entry(args.zone, args.name,
-                                              args.ip, args.type)
-    _print_dns_list([entries])
+    """Create a DNS entry for domain, name and ip."""
+    entries = cs.dns_entries.create(args.domain, args.name,
+                                    args.ip, args.type)
 
 
-@utils.arg('zone', metavar='<zone>', help='DNS zone')
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
 @utils.arg('name', metavar='<name>', help='DNS name')
 def do_dns_delete(cs, args):
     """Delete the specified DNS entry."""
-    cs.floating_ip_dns.delete_entry(args.zone, args.name)
+    cs.dns_entries.delete(args.domain, args.name)
+
+
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
+def do_dns_delete_domain(cs, args):
+    """Delete the specified DNS domain."""
+    cs.dns_domains.delete(args.domain)
+
+
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
+@utils.arg('--availability_zone', metavar='<availability_zone>',
+           help='Limit access to this domain to instances '
+                'in the specified availability zone.',
+           default=None)
+def do_dns_create_private_domain(cs, args):
+    """Create the specified DNS domain."""
+    cs.dns_domains.create_private(args.domain,
+                                  args.availability_zone)
+
+
+@utils.arg('domain', metavar='<domain>', help='DNS domain')
+@utils.arg('--project', metavar='<project>',
+           help='Limit access to this domain to users '
+                'of the specified project.',
+           default=None)
+def do_dns_create_public_domain(cs, args):
+    """Create the specified DNS domain."""
+    cs.dns_domains.create_public(args.domain,
+                                 args.project)
 
 
 def _print_secgroup_rules(rules):
@@ -1275,3 +1354,94 @@ def do_rate_limits(cs, args):
     limits = cs.limits.get().rate
     columns = ['Verb', 'URI', 'Value', 'Remain', 'Unit', 'Next_Available']
     utils.print_list(limits, columns)
+
+
+@utils.arg('--start', metavar='<start>',
+           help='Usage range start date ex 2012-01-20 (default: 4 weeks ago)',
+           default=None)
+@utils.arg('--end', metavar='<end>',
+           help='Usage range end date, ex 2012-01-20 (default: tomorrow) ',
+           default=None)
+def do_usage_list(cs, args):
+    """List usage data for all tenants"""
+    dateformat = "%Y-%m-%d"
+    rows = ["Tenant ID", "Instances", "RAM MB-Hours", "CPU Hours",
+            "Disk GB-Hours"]
+
+    if args.start:
+        start = datetime.datetime.strptime(args.start, dateformat)
+    else:
+        start = (datetime.datetime.today() -
+                 datetime.timedelta(weeks=4))
+
+    if args.end:
+        end = datetime.datetime.strptime(args.end, dateformat)
+    else:
+        end = datetime.datetime.tomorrow()
+
+    def simplify_usage(u):
+        simplerows = map(lambda x: x.lower().replace(" ", "_"), rows)
+
+        setattr(u, simplerows[0], u.tenant_id)
+        setattr(u, simplerows[1], "%d" % len(u.server_usages))
+        setattr(u, simplerows[2], "%.2f" % u.total_memory_mb_usage)
+        setattr(u, simplerows[3], "%.2f" % u.total_vcpus_usage)
+        setattr(u, simplerows[4], "%.2f" % u.total_local_gb_usage)
+
+    usage_list = cs.usage.list(start, end, detailed=True)
+
+    print "Usage from %s to %s:" % (start.strftime(dateformat),
+                                    end.strftime(dateformat))
+
+    for usage in usage_list:
+        simplify_usage(usage)
+
+    utils.print_list(usage_list, rows)
+
+
+@utils.arg('pk_filename',
+           metavar='<private_key_file>',
+           nargs='?',
+           default='pk.pem',
+           help='Filename to write the private key to.')
+@utils.arg('cert_filename',
+           metavar='<x509_cert>',
+           nargs='?',
+           default='cert.pem',
+           help='Filename to write the x509 cert.')
+def do_x509_create_cert(cs, args):
+    """Create x509 cert for a user in tenant"""
+
+    if os.path.exists(args.pk_filename):
+        raise exceptions.CommandError("Unable to write privatekey - %s exists."
+                        % args.pk_filename)
+    if os.path.exists(args.cert_filename):
+        raise exceptions.CommandError("Unable to write x509 cert - %s exists."
+                        % args.cert_filename)
+
+    certs = cs.certs.create()
+
+    with open(args.pk_filename, 'w') as private_key:
+        private_key.write(certs.private_key)
+        print "Wrote private key to %s" % args.pk_filename
+
+    with open(args.cert_filename, 'w') as cert:
+        cert.write(certs.data)
+        print "Wrote x509 certificate to %s" % args.cert_filename
+
+
+@utils.arg('filename',
+           metavar='<filename>',
+           nargs='?',
+           default='cacert.pem',
+           help='Filename to write the x509 root cert.')
+def do_x509_get_root_cert(cs, args):
+    """Fetches the x509 root cert."""
+    if os.path.exists(args.filename):
+        raise exceptions.CommandError("Unable to write x509 root cert - \
+                                      %s exists." % args.filename)
+
+    with open(args.filename, 'w') as cert:
+        cacert = cs.certs.get()
+        cert.write(cacert.data)
+        print "Wrote x509 root cert to %s" % args.filename

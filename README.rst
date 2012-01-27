@@ -83,6 +83,8 @@ You'll find complete documentation on the shell by running
                             Delete the backup schedule for a server.
         boot                Boot a new server.
         delete              Immediately shut down and delete a server.
+        flavor-create       Create a new flavor
+        flavor-delete       Delete a specific flavor
         flavor-list         Print a list of available 'flavors' (sizes of
                             servers).
         floating-ip-create  Allocate a floating IP to the current tenant.
@@ -135,6 +137,7 @@ You'll find complete documentation on the shell by running
         suspend             Suspend a server.
         unpause             Unpause a server.
         unrescue            Unrescue a server.
+        usage-list          List usage data for all tenants
         volume-attach       Attach a volume to a server.
         volume-create       Add a new volume.
         volume-delete       Remove a volume.
@@ -149,6 +152,8 @@ You'll find complete documentation on the shell by running
                             List all the snapshots.
         volume-snapshot-show
                             Show details about a snapshot.
+        x509-create-cert    Create x509 cert for a user in tenant
+        x509-get-root-cert  Fetches the x509 root cert.
         zone                Show or edit a Child Zone
         zone-add            Add a Child Zone.
         zone-boot           Boot a server, considering Zones.

@@ -1,4 +1,5 @@
 from novaclient import client
+from novaclient.v1_1 import certs
 from novaclient.v1_1 import flavors
 from novaclient.v1_1 import floating_ip_dns
 from novaclient.v1_1 import floating_ips
@@ -10,6 +11,8 @@ from novaclient.v1_1 import quotas
 from novaclient.v1_1 import security_group_rules
 from novaclient.v1_1 import security_groups
 from novaclient.v1_1 import servers
+from novaclient.v1_1 import usage
+from novaclient.v1_1 import virtual_interfaces
 from novaclient.v1_1 import volumes
 from novaclient.v1_1 import volume_snapshots
 from novaclient.v1_1 import zones
@@ -45,8 +48,10 @@ class Client(object):
         self.servers = servers.ServerManager(self)
 
         # extensions
+        self.dns_domains = floating_ip_dns.FloatingIPDNSDomainManager(self)
+        self.dns_entries = floating_ip_dns.FloatingIPDNSEntryManager(self)
+        self.certs = certs.CertificateManager(self)
         self.floating_ips = floating_ips.FloatingIPManager(self)
-        self.floating_ip_dns = floating_ip_dns.FloatingIPDNSManager(self)
         self.floating_ip_pools = floating_ip_pools.FloatingIPPoolManager(self)
         self.volumes = volumes.VolumeManager(self)
         self.volume_snapshots = volume_snapshots.SnapshotManager(self)
@@ -56,6 +61,9 @@ class Client(object):
         self.security_groups = security_groups.SecurityGroupManager(self)
         self.security_group_rules = \
             security_group_rules.SecurityGroupRuleManager(self)
+        self.usage = usage.UsageManager(self)
+        self.virtual_interfaces = \
+            virtual_interfaces.VirtualInterfaceManager(self)
 
         # Add in any extensions...
         if extensions:
