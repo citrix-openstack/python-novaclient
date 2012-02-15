@@ -70,7 +70,6 @@ class HTTPClient(httplib2.Http):
         if 'NOVACLIENT_DEBUG' in os.environ and os.environ['NOVACLIENT_DEBUG']:
             set_debug_mode(True)
 
-
     def http_log(self, args, kwargs, resp, body):
         if not _logger.isEnabledFor(logging.DEBUG):
             return
