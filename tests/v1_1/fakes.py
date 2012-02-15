@@ -546,3 +546,128 @@ class FakeHTTPClient(base_client.HTTPClient):
         r = {'security_group_rule':
             self.get_os_security_group_rules()[1]['security_group_rules'][0]}
         return (202, r)
+
+    #
+    # Tenant Usage
+    #
+    def get_os_simple_tenant_usage(self, **kw):
+        return (200, {u'tenant_usages': [{
+            u'total_memory_mb_usage': 25451.762807466665,
+            u'total_vcpus_usage': 49.71047423333333,
+            u'total_hours': 49.71047423333333,
+            u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+            u'stop': u'2012-01-22 19:48:41.750722',
+            u'server_usages': [{
+                u'hours': 49.71047423333333,
+                u'uptime': 27035, u'local_gb': 0, u'ended_at': None,
+                u'name': u'f15image1',
+                u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+                u'vcpus': 1, u'memory_mb': 512, u'state': u'active',
+                u'flavor': u'm1.tiny',
+                u'started_at': u'2012-01-20 18:06:06.479998'}],
+            u'start': u'2011-12-25 19:48:41.750687',
+            u'total_local_gb_usage': 0.0}]})
+
+    def get_os_simple_tenant_usage_tenantfoo(self, **kw):
+        return (200, {u'tenant_usage': {
+            u'total_memory_mb_usage': 25451.762807466665,
+            u'total_vcpus_usage': 49.71047423333333,
+            u'total_hours': 49.71047423333333,
+            u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+            u'stop': u'2012-01-22 19:48:41.750722',
+            u'server_usages': [{
+                u'hours': 49.71047423333333,
+                u'uptime': 27035, u'local_gb': 0, u'ended_at': None,
+                u'name': u'f15image1',
+                u'tenant_id': u'7b0a1d73f8fb41718f3343c207597869',
+                u'vcpus': 1, u'memory_mb': 512, u'state': u'active',
+                u'flavor': u'm1.tiny',
+                u'started_at': u'2012-01-20 18:06:06.479998'}],
+            u'start': u'2011-12-25 19:48:41.750687',
+            u'total_local_gb_usage': 0.0}})
+
+    #
+    # Certificates
+    #
+    def get_os_certificates_root(self, **kw):
+        return (200, {'certificate': {'private_key': None, 'data': 'foo'}})
+
+    def post_os_certificates(self, **kw):
+        return (200, {'certificate': {'private_key': 'foo', 'data': 'bar'}})
+
+    #
+    # Aggregates
+    #
+    def get_os_aggregates(self, *kw):
+        return (200, {"aggregates": [
+            {'id':'1',
+             'name': 'test',
+             'availability_zone': 'nova1'},
+            {'id':'2',
+             'name': 'test2',
+             'availability_zone': 'nova1'},
+        ]})
+
+    def _return_aggregate(self):
+        r = {'aggregate': self.get_os_aggregates()[1]['aggregates'][0]}
+        return (200, r)
+
+    def get_os_aggregates_1(self, **kw):
+        return self._return_aggregate()
+
+    def post_os_aggregates(self, body, **kw):
+        return self._return_aggregate()
+
+    def put_os_aggregates_1(self, body, **kw):
+        return self._return_aggregate()
+
+    def put_os_aggregates_2(self, body, **kw):
+        return self._return_aggregate()
+
+    def post_os_aggregates_1_action(self, body, **kw):
+        return self._return_aggregate()
+
+    def post_os_aggregates_2_action(self, body, **kw):
+        return self._return_aggregate()
+
+    def delete_os_aggregates_1(self, **kw):
+        return (202, None)
+
+    #
+    # Hosts
+    #
+    def get_os_hosts_host(self, *kw):
+        return (200, {'host':
+                [{'resource': {'project': '(total)', 'host': 'dummy',
+                  'cpu': 16, 'memory_mb': 32234, 'disk_gb': 128}},
+                 {'resource': {'project': '(used_now)', 'host': 'dummy',
+                  'cpu': 1, 'memory_mb': 2075, 'disk_gb': 45}},
+                 {'resource': {'project': '(used_max)', 'host': 'dummy',
+                  'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}},
+                 {'resource': {'project': 'admin', 'host': 'dummy',
+                  'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}}]})
+
+    def put_os_hosts_sample_host_1(self, body, **kw):
+        return (200, {'host': 'sample-host_1',
+                      'status': 'enabled'})
+
+    def put_os_hosts_sample_host_2(self, body, **kw):
+        return (200, {'host': 'sample-host_2',
+                      'maintenance_mode': 'on_maintenance'})
+
+    def put_os_hosts_sample_host_3(self, body, **kw):
+        return (200, {'host': 'sample-host_3',
+                      'status': 'enabled',
+                      'maintenance_mode': 'on_maintenance'})
+
+    def get_os_hosts_sample_host_startup(self, **kw):
+        return (200, {'host': 'sample_host',
+                      'power_action': 'startup'})
+
+    def get_os_hosts_sample_host_reboot(self, **kw):
+        return (200, {'host': 'sample_host',
+                      'power_action': 'reboot'})
+
+    def get_os_hosts_sample_host_shutdown(self, **kw):
+        return (200, {'host': 'sample_host',
+                      'power_action': 'shutdown'})

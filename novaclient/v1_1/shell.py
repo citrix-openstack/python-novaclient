@@ -1189,3 +1189,260 @@ def do_keypair_list(cs, args):
     keypairs = cs.keypairs.list()
     columns = ['Name', 'Fingerprint']
     utils.print_list(keypairs, columns)
+
+
+def do_absolute_limits(cs, args):
+    """Print a list of absolute limits for a user"""
+    limits = cs.limits.get().absolute
+    columns = ['Name', 'Value']
+    utils.print_list(limits, columns)
+
+
+def do_rate_limits(cs, args):
+    """Print a list of rate limits for a user"""
+    limits = cs.limits.get().rate
+    columns = ['Verb', 'URI', 'Value', 'Remain', 'Unit', 'Next_Available']
+    utils.print_list(limits, columns)
+
+
+@utils.arg('--start', metavar='<start>',
+           help='Usage range start date ex 2012-01-20 (default: 4 weeks ago)',
+           default=None)
+@utils.arg('--end', metavar='<end>',
+           help='Usage range end date, ex 2012-01-20 (default: tomorrow) ',
+           default=None)
+def do_usage_list(cs, args):
+    """List usage data for all tenants"""
+    dateformat = "%Y-%m-%d"
+    rows = ["Tenant ID", "Instances", "RAM MB-Hours", "CPU Hours",
+            "Disk GB-Hours"]
+
+    if args.start:
+        start = datetime.datetime.strptime(args.start, dateformat)
+    else:
+        start = (datetime.datetime.today() -
+                 datetime.timedelta(weeks=4))
+
+    if args.end:
+        end = datetime.datetime.strptime(args.end, dateformat)
+    else:
+        end = (datetime.datetime.today() +
+                 datetime.timedelta(days=1))
+
+    def simplify_usage(u):
+        simplerows = map(lambda x: x.lower().replace(" ", "_"), rows)
+
+        setattr(u, simplerows[0], u.tenant_id)
+        setattr(u, simplerows[1], "%d" % len(u.server_usages))
+        setattr(u, simplerows[2], "%.2f" % u.total_memory_mb_usage)
+        setattr(u, simplerows[3], "%.2f" % u.total_vcpus_usage)
+        setattr(u, simplerows[4], "%.2f" % u.total_local_gb_usage)
+
+    usage_list = cs.usage.list(start, end, detailed=True)
+
+    print "Usage from %s to %s:" % (start.strftime(dateformat),
+                                    end.strftime(dateformat))
+
+    for usage in usage_list:
+        simplify_usage(usage)
+
+    utils.print_list(usage_list, rows)
+
+
+@utils.arg('pk_filename',
+           metavar='<private_key_file>',
+           nargs='?',
+           default='pk.pem',
+           help='Filename to write the private key to.')
+@utils.arg('cert_filename',
+           metavar='<x509_cert>',
+           nargs='?',
+           default='cert.pem',
+           help='Filename to write the x509 cert.')
+def do_x509_create_cert(cs, args):
+    """Create x509 cert for a user in tenant"""
+
+    if os.path.exists(args.pk_filename):
+        raise exceptions.CommandError("Unable to write privatekey - %s exists."
+                        % args.pk_filename)
+    if os.path.exists(args.cert_filename):
+        raise exceptions.CommandError("Unable to write x509 cert - %s exists."
+                        % args.cert_filename)
+
+    certs = cs.certs.create()
+
+    with open(args.pk_filename, 'w') as private_key:
+        private_key.write(certs.private_key)
+        print "Wrote private key to %s" % args.pk_filename
+
+    with open(args.cert_filename, 'w') as cert:
+        cert.write(certs.data)
+        print "Wrote x509 certificate to %s" % args.cert_filename
+
+
+@utils.arg('filename',
+           metavar='<filename>',
+           nargs='?',
+           default='cacert.pem',
+           help='Filename to write the x509 root cert.')
+def do_x509_get_root_cert(cs, args):
+    """Fetches the x509 root cert."""
+    if os.path.exists(args.filename):
+        raise exceptions.CommandError("Unable to write x509 root cert - \
+                                      %s exists." % args.filename)
+
+    with open(args.filename, 'w') as cert:
+        cacert = cs.certs.get()
+        cert.write(cacert.data)
+        print "Wrote x509 root cert to %s" % args.filename
+
+
+def do_aggregate_list(cs, args):
+    """Print a list of all aggregates."""
+    aggregates = cs.aggregates.list()
+    columns = ['Id', 'Name', 'Availability Zone', 'Operational State']
+    utils.print_list(aggregates, columns)
+
+
+@utils.arg('name', metavar='<name>', help='Name of aggregate.')
+@utils.arg('availability_zone', metavar='<availability_zone>',
+           help='The availablity zone of the aggregate.')
+def do_aggregate_create(cs, args):
+    """Create a new aggregate with the specified details."""
+    aggregate = cs.aggregates.create(args.name, args.availability_zone)
+    _print_aggregate_details(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Aggregate id to delete.')
+def do_aggregate_delete(cs, args):
+    """Delete the aggregate by its id."""
+    cs.aggregates.delete(args.id)
+    print "Aggregate %s has been succesfully deleted." % args.id
+
+
+@utils.arg('id', metavar='<id>', help='Aggregate id to udpate.')
+@utils.arg('name', metavar='<name>', help='Name of aggregate.')
+@utils.arg('availability_zone', metavar='<availability_zone>',
+           help='The availablity zone of the aggregate.', nargs='?')
+def do_aggregate_update(cs, args):
+    """Update the aggregate's name and optionally availablity zone."""
+    updates = {"name": args.name}
+    if args.availability_zone:
+        updates["availability_zone"] = args.availability_zone
+
+    aggregate = cs.aggregates.update(args.id, updates)
+    print "Aggregate %s has been succesfully updated." % args.id
+    _print_aggregate_details(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Aggregate id to udpate.')
+@utils.arg('metadata',
+           metavar='<key=value>',
+           nargs='+',
+           action='append',
+           default=[],
+           help='Metadata to add/update to aggregate')
+def do_aggregate_set_metadata(cs, args):
+    """Update the metadata associated with the aggregate."""
+    metadata = _extract_metadata(args)
+    aggregate = cs.aggregates.set_metadata(args.id, metadata)
+    print "Aggregate %s has been succesfully updated." % args.id
+    _print_aggregate_details(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+@utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
+def do_aggregate_add_host(cs, args):
+    """Add the host to the specified aggregate."""
+    aggregate = cs.aggregates.add_host(args.id, args.host)
+    print "Aggregate %s has been succesfully updated." % args.id
+    _print_aggregate_details(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+@utils.arg('host', metavar='<host>', help='The host to add to the aggregate.')
+def do_aggregate_remove_host(cs, args):
+    """Remove the specified host from the specfied aggregate."""
+    aggregate = cs.aggregates.remove_host(args.id, args.host)
+    print "Aggregate %s has been succesfully updated." % args.id
+    _print_aggregate_details(aggregate)
+
+
+@utils.arg('id', metavar='<id>', help='Host aggregate id to delete.')
+def do_aggregate_details(cs, args):
+    """Show details of the specified aggregate."""
+    _print_aggregate_details(cs.aggregates.get_details(args.id))
+
+
+def _print_aggregate_details(aggregate):
+    columns = ['Id', 'Name', 'Availability Zone', 'Operational State',
+               'Hosts', 'Metadata']
+    utils.print_list([aggregate], columns)
+
+
+@utils.arg('server', metavar='<server>', help='Name or ID of server.')
+@utils.arg('host', metavar='<host>', help='destination host name.')
+@utils.arg('--block_migrate', action='store_true', dest='block_migrate',
+           default=False,
+           help='True in case of block_migration.\
+                (Default=False:live_migration)')
+@utils.arg('--disk_over_commit', action='store_true', dest='disk_over_commit',
+           default=False,
+           help='Allow overcommit.(Default=Flase)')
+def do_live_migration(cs, args):
+    """Migrates a running instance to a new machine."""
+    _find_server(cs, args.server).live_migrate(args.host,
+                                               args.block_migrate,
+                                               args.disk_over_commit)
+
+
+@utils.arg('host', metavar='<hostname>', help='Name of host.')
+def do_describe_resource(cs, args):
+    """Show details about a resource"""
+    result = cs.hosts.get(args.host)
+    columns = ["HOST", "PROJECT", "cpu", "memory_mb", "disk_gb"]
+    utils.print_list(result, columns)
+
+
+@utils.arg('host', metavar='<hostname>', help='Name of host.')
+@utils.arg('--status', metavar='<status>', default=None, dest='status',
+           help='Either enable or disable a host.')
+@utils.arg('--maintenance', metavar='<maintenance_mode>', default=None,
+           dest='maintenance',
+           help='Either put or resume host to/from maintenance.')
+def do_host_update(cs, args):
+    """Update host settings."""
+    updates = {}
+    columns = ["HOST"]
+    if args.status:
+        updates['status'] = args.status
+        columns.append("status")
+    if args.maintenance:
+        updates['maintenance_mode'] = args.maintenance
+        columns.append("maintenance_mode")
+    result = cs.hosts.update(args.host, updates)
+    utils.print_list([result], columns)
+
+
+@utils.arg('host', metavar='<hostname>', help='Name of host.')
+@utils.arg('--action', metavar='<action>', dest='action',
+           choices=['startup', 'shutdown', 'reboot'],
+           help='A power action: startup, reboot, or shutdown.')
+def do_host_action(cs, args):
+    """Perform a power action on a host."""
+    result = cs.hosts.host_action(args.host, args.action)
+    utils.print_list([result], ['HOST', 'power_action'])
+
+
+def do_endpoints(cs, args):
+    """Discover endpoints that get returned from the authenticate services"""
+    catalog = cs.client.service_catalog.catalog
+    for e in catalog['access']['serviceCatalog']:
+        utils.print_dict(e['endpoints'][0], e['name'])
+
+
+def do_credentials(cs, args):
+    """Show user credentials returned from auth"""
+    catalog = cs.client.service_catalog.catalog
+    utils.print_dict(catalog['access']['user'], "User Credentials")
+    utils.print_dict(catalog['access']['token'], "Token")
