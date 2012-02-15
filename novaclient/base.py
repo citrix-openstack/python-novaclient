@@ -75,12 +75,9 @@ class Manager(object):
             data = data['values']
         return [obj_class(self, res, loaded=True) for res in data if res]
 
-    def _get(self, url, response_key=None):
+    def _get(self, url, response_key):
         resp, body = self.api.client.get(url)
-        if response_key:
-            return self.resource_class(self, body[response_key])
-        else:
-            return self.resource_class(self, body)
+        return self.resource_class(self, body[response_key])
 
     def _create(self, url, body, response_key, return_raw=False):
         resp, body = self.api.client.post(url, body=body)
